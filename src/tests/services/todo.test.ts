@@ -1,99 +1,107 @@
+import { rest } from "msw";
+import { server } from "../../mocks/server";
 import {
   getTodosService,
   addTodoService,
   toggleTodoService,
   deleteTodoService,
 } from "../../services/todo";
-import service from "../../services/config";
-
-const mockService = (httpMethod: any) => jest.spyOn(service, httpMethod);
 
 test("should fetch todos successfully", async () => {
   const mockData: Todo[] = [{ id: "1", title: "demo", isCompleted: false }];
-  // mockService("get").mockResolvedValueOnce({ data: mockData });
-
-  const res = await getTodosService()
+  const res = await getTodosService();
 
   expect(res).toEqual(mockData);
 });
 
 test("should fetch todos erroneously", async () => {
-  mockService("get").mockRejectedValueOnce(new Error("This error for testing"));
+  server.use(
+    rest.get("/todos", (req, res, ctx) => {
+      return res(ctx.status(500));
+    })
+  );
 
-  await expect(getTodosService()).rejects.toThrow("This error for testing");
+  let res = null;
+
+  try {
+    await getTodosService();
+  } catch (err) {
+    res = err.message;
+  }
+
+  expect(res).toEqual("Request failed with status code 500");
 });
 
 test("should add todo successfully", async () => {
   const mockData: Todo = { id: "1", title: "demo", isCompleted: false };
-  mockService("post").mockResolvedValueOnce({ data: mockData });
+  const res = await addTodoService("demo");
 
-  await expect(addTodoService("demo")).resolves.toEqual(mockData);
-});
-
-test("should add todo successfully with params", async () => {
-  mockService("post").mockResolvedValueOnce({});
-  await addTodoService("demo");
-
-  expect(mockService("post")).toHaveBeenCalledWith("/todos", {
-    isCompleted: false,
-    title: "demo",
-  });
+  expect(res).toEqual(mockData);
 });
 
 test("should add todo erroneously", async () => {
-  mockService("post").mockRejectedValueOnce(
-    new Error("This error for testing")
+  server.use(
+    rest.post("/todos", (req, res, ctx) => {
+      return res(ctx.status(500));
+    })
   );
 
-  await expect(addTodoService("demo")).rejects.toThrow(
-    "This error for testing"
-  );
+  let res = null;
+
+  try {
+    await addTodoService("demo");
+  } catch (err) {
+    res = err.message;
+  }
+
+  expect(res).toEqual("Request failed with status code 500");
 });
 
 test("should toggle todo successfully", async () => {
-  const mockData: Todo = { id: "1", title: "demo", isCompleted: false };
-  mockService("patch").mockResolvedValueOnce({ data: mockData });
+  const mockData: Todo = { id: "1", title: "demo", isCompleted: true };
+  const res = await toggleTodoService("1", false);
 
-  await expect(toggleTodoService("1", true)).resolves.toEqual(mockData);
-});
-
-test("should toggle todo successfully with params", async () => {
-  mockService("patch").mockResolvedValueOnce({});
-  await toggleTodoService("1", false);
-
-  expect(mockService("patch")).toHaveBeenCalledWith("/todos/1", {
-    isCompleted: true,
-  });
+  expect(res).toEqual(mockData);
 });
 
 test("should toggle todo erroneusly", async () => {
-  mockService("patch").mockRejectedValueOnce(new Error("This error for testing"));
-
-  await expect(toggleTodoService("1", false)).rejects.toThrow(
-    "This error for testing"
+  server.use(
+    rest.patch("/todos/:id", (req, res, ctx) => {
+      return res(ctx.status(500));
+    })
   );
+
+  let res = null;
+
+  try {
+    await toggleTodoService("1", false);
+  } catch (err) {
+    res = err.message;
+  }
+
+  expect(res).toEqual("Request failed with status code 500");
 });
 
 test("should delete todo successfully", async () => {
-  const mockData: Todo = { id: "1", title: "demo", isCompleted: false };
-  mockService("delete").mockResolvedValueOnce({ data: mockData });
+  const res = await deleteTodoService("1");
 
-  await expect(deleteTodoService("1")).resolves.toEqual("1");
-});
-
-test("should delete todo successfully with params", async () => {
-  mockService("delete").mockResolvedValueOnce({});
-  await deleteTodoService("1");
-
-  expect(mockService("delete")).toHaveBeenCalledWith("todos/1");
+  expect(res).toEqual("1");
 });
 
 test("should delete todo erroneusly", async () => {
-  mockService("delete").mockRejectedValueOnce(
-    new Error("This error for testing")
+  server.use(
+    rest.delete("/todos/:id", (req, res, ctx) => {
+      return res(ctx.status(500));
+    })
   );
 
-  await expect(deleteTodoService("1")).rejects.toThrow(
-    "This error for testing"
-  );
+  let res = null;
+
+  try {
+    await deleteTodoService("1");
+  } catch (err) {
+    res = err.message;
+  }
+
+  expect(res).toEqual("Request failed with status code 500");
 });
