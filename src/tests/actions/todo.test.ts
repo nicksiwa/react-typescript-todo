@@ -1,12 +1,8 @@
-import configureStore from "redux-mock-store";
-import thunk from "redux-thunk";
 import { rest } from "msw";
+import { mockStore } from "../../testUtils";
 import { server } from "../../mocks/server";
 import { TodoAction } from "../../actions";
 import { TodoActionType } from "../../constants/actionTypes";
-
-const middleware: any = [thunk];
-const mockStore = configureStore(middleware);
 
 test("should create an action for a pending fetch of todos", () => {
   const expectedAction = {
